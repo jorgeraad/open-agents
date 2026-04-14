@@ -392,6 +392,7 @@ export async function runAutoCommitStep(params: {
   repoOwner: string;
   repoName: string;
   sandboxState: SandboxState;
+  enableSecurityScanning?: boolean;
 }): Promise<AutoCommitResult> {
   "use step";
   try {
@@ -405,6 +406,7 @@ export async function runAutoCommitStep(params: {
       sessionTitle: params.sessionTitle,
       repoOwner: params.repoOwner,
       repoName: params.repoName,
+      enableSecurityScanning: params.enableSecurityScanning,
     });
   } catch (error) {
     console.error("[workflow] Auto-commit failed:", error);
@@ -423,6 +425,7 @@ export async function runAutoCreatePrStep(params: {
   repoOwner: string;
   repoName: string;
   sandboxState: SandboxState;
+  securityWorkflowInjected?: boolean;
 }): Promise<AutoCreatePrResult> {
   "use step";
   try {
@@ -436,6 +439,7 @@ export async function runAutoCreatePrStep(params: {
       sessionTitle: params.sessionTitle,
       repoOwner: params.repoOwner,
       repoName: params.repoName,
+      securityWorkflowInjected: params.securityWorkflowInjected,
     });
 
     if (result.error) {

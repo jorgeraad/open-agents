@@ -5,6 +5,7 @@ import { getGitHubAccount } from "@/lib/db/accounts";
 import { buildGitHubAuthRemoteUrl } from "@/lib/github/repo-identifiers";
 import { getAppCoAuthorTrailer } from "@/lib/github/app-auth";
 import { getUserGitHubToken } from "@/lib/github/user-token";
+import { injectSecurityWorkflow } from "@/lib/chat/security-workflow";
 
 export interface AutoCommitParams {
   sandbox: Sandbox;
@@ -13,6 +14,13 @@ export interface AutoCommitParams {
   sessionTitle: string;
   repoOwner: string;
   repoName: string;
+  /**
+   * When true, inject the configured security-scanning provider's
+   * workflow file into the commit if it is not already present on
+   * the current branch. Skipped when there are no other staged
+   * changes, to avoid a solo setup commit.
+   */
+  enableSecurityScanning?: boolean;
 }
 
 export interface AutoCommitResult {
@@ -20,6 +28,7 @@ export interface AutoCommitResult {
   pushed: boolean;
   commitMessage?: string;
   commitSha?: string;
+  securityWorkflowInjected?: boolean;
   error?: string;
 }
 
@@ -30,7 +39,14 @@ export interface AutoCommitResult {
 export async function performAutoCommit(
   params: AutoCommitParams,
 ): Promise<AutoCommitResult> {
-  const { sandbox, userId, sessionTitle, repoOwner, repoName } = params;
+  const {
+    sandbox,
+    userId,
+    sessionTitle,
+    repoOwner,
+    repoName,
+    enableSecurityScanning,
+  } = params;
   const cwd = sandbox.workingDirectory;
 
   // 1. Check for uncommitted changes
@@ -38,6 +54,13 @@ export async function performAutoCommit(
   if (!statusResult.success || !statusResult.stdout.trim()) {
     return { committed: false, pushed: false };
   }
+
+  // 1a. Optionally inject the configured security-scanning workflow
+  // alongside the existing changes (only when there's already real work to
+  // commit — we intentionally skip solo setup commits).
+  const securityWorkflowInjected = enableSecurityScanning
+    ? await injectSecurityWorkflow(sandbox)
+    : false;
 
   // 2. Set up auth on the remote
   const repoToken = await getUserGitHubToken(userId);
@@ -123,6 +146,7 @@ export async function performAutoCommit(
       pushed: false,
       commitMessage,
       commitSha,
+      securityWorkflowInjected,
       error: "Commit succeeded but push failed",
     };
   }
@@ -136,6 +160,7 @@ export async function performAutoCommit(
     pushed: true,
     commitMessage,
     commitSha,
+    securityWorkflowInjected,
   };
 }
 

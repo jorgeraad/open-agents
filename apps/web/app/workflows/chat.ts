@@ -48,6 +48,13 @@ type Options = {
   autoCommitEnabled?: boolean;
   /** Whether auto PR creation should run after auto-commit on a natural finish. */
   autoCreatePrEnabled?: boolean;
+  /**
+   * When true, inject the configured security-scanning provider's
+   * workflow file alongside the auto-commit so the user's repo starts
+   * getting scanned on every push. Skipped when the workflow file
+   * already exists on the branch.
+   */
+  enableSecurityScanning?: boolean;
   /** Session title for commit message generation. */
   sessionTitle?: string;
   /** GitHub repo owner (required for auto-commit and diff refresh). */
@@ -613,6 +620,7 @@ export async function runAgentWorkflow(options: Options) {
             repoOwner,
             repoName,
             sandboxState,
+            enableSecurityScanning: options.enableSecurityScanning,
           })
         : {
             committed: false,
@@ -659,6 +667,8 @@ export async function runAgentWorkflow(options: Options) {
           repoOwner,
           repoName,
           sandboxState,
+          securityWorkflowInjected:
+            autoCommitResult?.securityWorkflowInjected ?? false,
         });
 
         const resolvedPrPart = {

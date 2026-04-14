@@ -215,6 +215,17 @@ export function PreferencesSection() {
     }
   };
 
+  const handleEnableSecurityScanningChange = async (enabled: boolean) => {
+    setIsSaving(true);
+    try {
+      await updatePreferences({ enableSecurityScanning: enabled });
+    } catch (error) {
+      console.error("Failed to update security scanning preference:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleAlertsEnabledChange = async (enabled: boolean) => {
     setIsSaving(true);
     try {
@@ -476,6 +487,24 @@ export function PreferencesSection() {
                 id="auto-create-pr"
                 checked={preferences?.autoCreatePr ?? false}
                 onCheckedChange={handleAutoCreatePrChange}
+                disabled={isSaving || !(preferences?.autoCommitPush ?? false)}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <Label htmlFor="enable-security-scanning">
+                  Continuous security scanning
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Include a GitHub Actions security scanning workflow in the
+                  first PR the agent opens on each repo. The scanner runs on
+                  every push and requires its API key as an Actions secret.
+                </p>
+              </div>
+              <Switch
+                id="enable-security-scanning"
+                checked={preferences?.enableSecurityScanning ?? false}
+                onCheckedChange={handleEnableSecurityScanningChange}
                 disabled={isSaving || !(preferences?.autoCommitPush ?? false)}
               />
             </div>

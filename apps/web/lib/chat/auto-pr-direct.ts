@@ -13,6 +13,7 @@ import {
 } from "@/lib/github/repo-identifiers";
 import { getUserGitHubToken } from "@/lib/github/user-token";
 import { generatePullRequestContentFromSandbox } from "@/lib/git/pr-content";
+import { getSecurityWorkflowPrCallout } from "@/lib/chat/security-workflow";
 
 const SAFE_BRANCH_PATTERN = /^[\w\-/.]+$/;
 
@@ -23,6 +24,12 @@ export interface AutoCreatePrParams {
   sessionTitle: string;
   repoOwner: string;
   repoName: string;
+  /**
+   * When true, prepend the configured security-scanning provider's
+   * PR callout to the generated PR body. Set by the caller when the
+   * auto-commit step injected the workflow file.
+   */
+  securityWorkflowInjected?: boolean;
 }
 
 export interface AutoCreatePrResult {
@@ -98,8 +105,15 @@ async function findExistingOpenPullRequest(params: {
 export async function performAutoCreatePr(
   params: AutoCreatePrParams,
 ): Promise<AutoCreatePrResult> {
-  const { sandbox, userId, sessionId, sessionTitle, repoOwner, repoName } =
-    params;
+  const {
+    sandbox,
+    userId,
+    sessionId,
+    sessionTitle,
+    repoOwner,
+    repoName,
+    securityWorkflowInjected,
+  } = params;
   const cwd = sandbox.workingDirectory;
 
   const branchResult = await sandbox.exec(
@@ -302,11 +316,14 @@ export async function performAutoCreatePr(
   }
 
   const repoUrl = `https://github.com/${repoOwner}/${repoName}`;
+  const prBody = securityWorkflowInjected
+    ? `${getSecurityWorkflowPrCallout()}${prContentResult.body}`
+    : prContentResult.body;
   const createResult = await createPullRequest({
     repoUrl,
     branchName,
     title: prContentResult.title,
-    body: prContentResult.body,
+    body: prBody,
     baseBranch: defaultBranch,
     token: userToken,
   });

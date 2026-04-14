@@ -17,6 +17,7 @@ interface UpdatePreferencesRequest {
   defaultDiffMode?: DiffMode;
   autoCommitPush?: boolean;
   autoCreatePr?: boolean;
+  enableSecurityScanning?: boolean;
   alertsEnabled?: boolean;
   alertSoundEnabled?: boolean;
   publicUsageEnabled?: boolean;
@@ -83,6 +84,16 @@ export async function PATCH(req: Request) {
   ) {
     return Response.json(
       { error: "Invalid autoCreatePr value" },
+      { status: 400 },
+    );
+  }
+
+  if (
+    body.enableSecurityScanning !== undefined &&
+    typeof body.enableSecurityScanning !== "boolean"
+  ) {
+    return Response.json(
+      { error: "Invalid enableSecurityScanning value" },
       { status: 400 },
     );
   }

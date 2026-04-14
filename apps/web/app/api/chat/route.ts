@@ -223,6 +223,7 @@ export async function POST(req: Request) {
         sessionRecord.repoName && {
           autoCommitEnabled: true,
           autoCreatePrEnabled: shouldAutoCreatePr,
+          enableSecurityScanning: preferences?.enableSecurityScanning ?? false,
           sessionTitle: sessionRecord.title,
           repoOwner: sessionRecord.repoOwner,
           repoName: sessionRecord.repoName,
